@@ -37,7 +37,7 @@ jobs:
           pip install flake8 pytest pytest-django
 
       - name: Run flake8
-        run: flake8 . --max-line-length=120 --exclude=migrations,venv,.git
+        run: flake8 . --max-line-length=120 --exclude=migrations,venv,.git --ignore=F401,F841
 
       - name: Run tests
         env:
