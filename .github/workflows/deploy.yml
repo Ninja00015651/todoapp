@@ -5,8 +5,55 @@ on:
     branches: [ main ]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: todoapp
+          POSTGRES_USER: todoapp
+          POSTGRES_PASSWORD: todoapp
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install flake8 pytest pytest-django
+
+      - name: Run flake8
+        run: flake8 . --max-line-length=120 --exclude=migrations,venv,.git
+
+      - name: Run tests
+        env:
+          POSTGRES_DB: todoapp
+          POSTGRES_USER: todoapp
+          POSTGRES_PASSWORD: todoapp
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          SECRET_KEY: test-secret-key-for-ci
+          DEBUG: "False"
+          ALLOWED_HOSTS: localhost
+        run: pytest tasks/tests.py -v
+
   build-and-deploy:
     runs-on: ubuntu-latest
+    needs: test
 
     steps:
       - name: Checkout code
@@ -23,7 +70,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/todoapp:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/todoapp:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/todoapp:${{ github.sha }}
 
       - name: Deploy to GCP server
         uses: appleboy/ssh-action@v1.0.3
