@@ -17,6 +17,8 @@ INSTALLED_APPS = [
     'tasks',
 ]
 
+CSRF_TRUSTED_ORIGINS = ["http://35.242.212.39"]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
